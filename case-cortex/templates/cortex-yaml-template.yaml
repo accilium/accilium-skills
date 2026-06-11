@@ -1,0 +1,25 @@
+# cortex.yaml — case-level metadata
+# Substitute {{PLACEHOLDERS}} when scaffolding. Keep the structure intact.
+
+case_id: {{CASE_SLUG}}           # lowercase-hyphenated, filesystem-safe
+name: {{CASE_NAME}}              # human-readable display name
+mode: {{MODE}}                   # minimal | full
+domain: {{DOMAIN_FLAVOR}}        # consulting | legal | research | engineering | investigation | general (full mode only)
+status: initialized              # initialized | active | on-hold | wrapping-up | closed
+created: {{YYYY-MM-DD}}
+owner: {{OWNER_NAME}}            # person responsible for the Cortex
+
+# Cortex schema and skill versions
+cortex_schema: 1
+skill_version: 1.0
+
+# Optional — filled in as the case progresses
+client: {{CLIENT_OR_SUBJECT}}    # can be blank for internal cases
+team: []                         # list of contributors
+tags: []                         # free-form labels for cross-case queries
+last_reviewed: null              # YYYY-MM-DD of most recent review pass; lint warns if older than 90 days
+
+# Sync configuration (optional — used if ingest agents are connected)
+sync:
+  last_pulled: null
+  sources: []

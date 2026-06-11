@@ -1,0 +1,10 @@
+# 04-pointers/systems.yaml — internal systems of record
+# Every pointer MUST have id, url, and description.
+
+pointers:
+  # - id: {{POINTER_ID}}
+  #   system: {{SYSTEM_NAME}}       # hubspot | salesforce | notion | sharepoint | github | jira | asana | teams | slack | other
+  #   kind: {{KIND}}                # account | contact | deal | document | folder | issue | repo | thread | channel
+  #   url: {{URL_OR_PATH}}
+  #   description: {{DESCRIPTION}}
+  #   last_verified: {{YYYY-MM-DD}}

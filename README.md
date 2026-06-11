@@ -27,7 +27,7 @@ A skill is a folder containing a `SKILL.md` file (plus optional references and t
 
 | Skill | What it does |
 |---|---|
-| _First skill lands via pull request — see open PRs._ | |
+| [`case-cortex`](case-cortex/) | Build and maintain a **Case Cortex**: a structured, living, file-based memory for a single bounded knowledge-work problem — a deal, a matter, an investigation, a research question. Four layers (canonical facts, working memory, derived artifacts, pointers), six workflows (initialize, seed, ingest, maintain, use, lint), full provenance on everything. |
 
 ## Feedback and contributions
 
