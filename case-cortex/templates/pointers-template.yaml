@@ -1,0 +1,9 @@
+# Deprecated compatibility note
+#
+# New Cortexes should use:
+# - `templates/systems-template.yaml` for `04-pointers/systems.yaml`
+# - `templates/external-template.yaml` for `04-pointers/external.yaml`
+#
+# This file is kept only so older instructions that mention
+# `pointers-template.yaml` have a landing page. Do not copy this file
+# directly into a Cortex.

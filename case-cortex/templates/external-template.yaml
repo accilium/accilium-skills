@@ -1,0 +1,10 @@
+# 04-pointers/external.yaml — external sources
+# Every pointer MUST have id, url, and description.
+
+pointers:
+  # - id: {{POINTER_ID}}
+  #   kind: {{KIND}}                # filing | article | website | standard | regulation | dataset | publication | other
+  #   url: {{URL_OR_PATH}}        # for pasted/dictated sources with no locator, use conversation:{{YYYY-MM-DD}}
+  #   description: {{DESCRIPTION}}
+  #   last_verified: {{YYYY-MM-DD}}
+  #   retrieved_snapshot: null      # optional path to local archived copy if needed
