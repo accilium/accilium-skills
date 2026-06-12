@@ -1,0 +1,19 @@
+{
+  "name": "accilium-skills",
+  "description": "Agent skills from accilium's AI-native transformation, shared in public",
+  "owner": {
+    "name": "accilium"
+  },
+  "plugins": [
+    {
+      "name": "case-cortex",
+      "description": "Build and maintain a Case Cortex — a structured, living, machine-readable representation of a single bounded knowledge-work problem (a deal, a matter, an investigation, a research question) that agents and humans share as their reasoning substrate. Triggers on: \"build a cortex for X\", \"start a new case\", \"seed my cortex\", \"ingest this into the cortex\", \"what does the cortex say about Y\", \"lint the cortex\". Do NOT use for casual long-running tasks, one-shot research, or general-purpose wikis spanning multiple problems.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./case-cortex"
+      ],
+      "version": "1.0.0"
+    }
+  ]
+}
