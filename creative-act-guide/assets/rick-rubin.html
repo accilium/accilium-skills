@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>the creative act</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0b0e14;
+    --skin: #55618f;
+    --beard: #e6ecf8;
+    --feature: #9db4ff;
+    --dim: #39415c;
+    --glow: rgba(157, 180, 255, 0.25);
+  }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--beard);
+    font-family: "SF Mono", "Menlo", "Consolas", "DejaVu Sans Mono", monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.8rem;
+    overflow: hidden;
+    padding: 1.5rem 1rem;
+  }
+
+  header {
+    color: var(--dim);
+    letter-spacing: 0.55em;
+    text-indent: 0.55em;
+    font-size: 0.72rem;
+    user-select: none;
+  }
+
+  #figure {
+    animation: breathe 7s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px var(--glow));
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: translateY(4px) scale(1); }
+    50%      { transform: translateY(-5px) scale(1.012); }
+  }
+
+  pre#art {
+    font-size: clamp(6px, 1.8vmin, 14px);
+    line-height: 1.24;
+    user-select: none;
+    white-space: pre;
+  }
+
+  pre#art .h { color: var(--skin); }
+  pre#art .b { color: var(--beard); }
+  pre#art .f { color: var(--feature); }
+
+  #quote {
+    min-height: 3.2em;
+    max-width: 34rem;
+    text-align: center;
+    color: #8a93ad;
+    font-size: 0.82rem;
+    line-height: 1.7;
+    opacity: 0;
+    transition: opacity 2.4s ease;
+    user-select: none;
+  }
+
+  #quote.visible { opacity: 1; }
+
+  #quote .attr { color: var(--dim); display: block; margin-top: 0.35em; }
+
+  @media (prefers-reduced-motion: reduce) {
+    #figure { animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>THE CREATIVE ACT</header>
+
+<div id="figure">
+  <pre id="art" aria-label="ASCII portrait of a bald, long-bearded figure meditating with closed eyes"></pre>
+</div>
+
+<div id="quote"></div>
+
+<script>
+/*
+ * The head is generated, not hand-drawn: soft-edged ellipses composed into
+ * a silhouette (skull, brows, closed eyes, nose, mustache, beard, shoulders),
+ * shaded, then mapped onto an ASCII density ramp. Smooth edges come from the
+ * anti-aliased coverage of each shape; the ghostty-style shimmer re-rolls
+ * glyphs around each cell's density so the shading survives the motion.
+ */
+const COLS = 64, ROWS = 46, ASPECT = 2.05, CX = 32;
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const ell = (x, y, cx, cy, rx, ry) => Math.hypot((x - cx) / rx, (y - cy) / ry) - 1;
+const cov = (d, s = 0.10) => clamp((s - d) / (2 * s), 0, 1);
+
+const RAMP_SKIN  = " .,:;+*o";      // face stays airy and dim
+const RAMP_BEARD = " .:;+*oxO8@";   // beard gets the heavy bright glyphs
+
+function cell(c, r) {
+  const x = c + 0.5;
+  const y = r * ASPECT;
+  const dx = Math.abs(x - CX);
+
+  const skull = ell(x, y, CX, 26, 16.5, 22);
+  const earL  = ell(x, y, CX - 17, 36, 2.6, 5);
+  const earR  = ell(x, y, CX + 17, 36, 2.6, 5);
+  const skinC = Math.max(cov(skull), cov(earL), cov(earR));
+
+  const beardTop = Math.max(33, 47 - 0.8 * dx);
+  let beardC = 0, mustC = 0, beardD = 9;
+  if (y > beardTop - 3) {
+    const bMain  = ell(x, y, CX, 56, 22, 22);
+    const bTaper = ell(x, y, CX, 68, 12, 22);
+    mustC = cov(ell(x, y, CX, 47, 10, 3.2));
+    beardD = Math.min(bMain, bTaper);
+    beardC = Math.max(cov(bMain), cov(bTaper), mustC);
+    beardC *= clamp((y - beardTop) / 3 + 1, 0, 1);
+  }
+
+  const browC = Math.max(cov(ell(x, y, CX - 7.5, 30, 5, 1.8)),
+                         cov(ell(x, y, CX + 7.5, 30, 5, 1.8)));
+  const eyeC  = Math.max(cov(ell(x, y, CX - 7.5, 35, 4.2, 1.5)),
+                         cov(ell(x, y, CX + 7.5, 35, 4.2, 1.5)));
+  const nostC = cov(ell(x, y, CX, 43, 3.4, 1.5));
+  const noseC = cov(ell(x, y, CX, 38, 2, 6));
+  const mouthC = cov(ell(x, y, CX, 51, 5, 1.3));
+
+  const hd = Math.hypot((x - (CX - 5)) / 22, (y - 15) / 24);
+  const skinB = 0.36 + 0.30 * (1 - clamp(hd, 0, 1));
+
+  if (eyeC > 0.45 && beardC < 0.3) return { cls: "f", fixed: "_" };
+  if (browC > 0.35)               return { cls: "b", ramp: RAMP_BEARD, b: 0.68 + 0.22 * browC };
+  if (beardC > 0.05) {
+    // volume shading: bright core, darker toward the silhouette edge,
+    // overlaid with broad soft strands — structure, not noise
+    const depth = clamp(-beardD * 2.2, 0, 1);
+    let b = 0.50 + 0.42 * Math.pow(depth, 0.8);
+    b *= 0.93 + 0.07 * Math.sin(x * 0.7);
+    b += 0.18 * mustC;
+    b *= 1 - 0.9 * mouthC;
+    b *= 0.25 + 0.75 * beardC;
+    return { cls: "b", ramp: RAMP_BEARD, b: clamp(b, 0, 1) };
+  }
+  if (skinC > 0.05) {
+    let b = skinB * (0.25 + 0.75 * skinC);
+    b *= 1 + 0.2 * noseC;
+    b *= 1 - 0.9 * nostC;
+    return { cls: "h", ramp: RAMP_SKIN, b: clamp(b, 0, 1) };
+  }
+  return null;
+}
+
+const art = document.getElementById("art");
+const cells = [];   // { el, ramp, base, r, cur, spark } — animation targets
+
+for (let r = 0; r < ROWS; r++) {
+  for (let c = 0; c < COLS; c++) {
+    const cl = cell(c, r);
+    if (!cl) {
+      art.appendChild(document.createTextNode(" "));
+      continue;
+    }
+    const s = document.createElement("span");
+    s.className = cl.cls;
+    if (cl.fixed) {
+      s.textContent = cl.fixed;
+    } else {
+      const base = clamp(Math.round(cl.b * (cl.ramp.length - 1)), 0, cl.ramp.length - 1);
+      s.textContent = cl.ramp[base];
+      cells.push({ el: s, ramp: cl.ramp, base, r, cur: base, spark: 0 });
+    }
+    art.appendChild(s);
+  }
+  art.appendChild(document.createTextNode("\n"));
+}
+
+/* A slow wave of light travels down through the figure: whole rows shift
+   one density step together, so the shading stays coherent instead of
+   dissolving into noise. A few cells briefly sparkle on top. */
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (!reduceMotion) {
+  let t = 0;
+  const sparks = new Set();
+  setInterval(() => {
+    t += 0.11;
+    for (const cel of sparks) cel.spark = 0;
+    sparks.clear();
+    const n = Math.ceil(cells.length * 0.008);
+    for (let i = 0; i < n; i++) {
+      const cel = cells[(Math.random() * cells.length) | 0];
+      cel.spark = 1;
+      sparks.add(cel);
+    }
+    for (const cel of cells) {
+      const off = Math.round(0.7 * Math.sin(cel.r * 0.3 - t));
+      const j = clamp(cel.base + off + cel.spark, 0, cel.ramp.length - 1);
+      if (j !== cel.cur) {
+        cel.cur = j;
+        cel.el.textContent = cel.ramp[j];
+      }
+    }
+  }, 90);
+}
+
+/* Slowly rotating stones. */
+const QUOTES = [
+  "Nothing begins with us.",
+  "Look for what you notice but no one else sees.",
+  "Inspiration comes first. You come next. The audience comes last.",
+  "Discipline and freedom seem like opposites. In reality, they are partners.",
+  "The universe is only as large as our perception of it. When we cultivate our awareness, we are expanding the universe.",
+  "A work of art is not an end point in itself. It's a station on a journey.",
+  "Living life as an artist is a practice. You are either engaging in the practice or you're not.",
+];
+
+const quoteEl = document.getElementById("quote");
+let qi = Math.floor(Math.random() * QUOTES.length);
+
+function showQuote() {
+  quoteEl.innerHTML = "";
+  quoteEl.appendChild(document.createTextNode("“" + QUOTES[qi] + "”"));
+  const attr = document.createElement("span");
+  attr.className = "attr";
+  attr.textContent = "— Rick Rubin, The Creative Act";
+  quoteEl.appendChild(attr);
+  quoteEl.classList.add("visible");
+  qi = (qi + 1) % QUOTES.length;
+  setTimeout(() => quoteEl.classList.remove("visible"), 9000);
+}
+
+showQuote();
+setInterval(showQuote, 12500);
+</script>
+
+</body>
+</html>

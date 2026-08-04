@@ -28,6 +28,7 @@ A skill is a folder containing a `SKILL.md` file (plus optional references and t
 | Skill | What it does |
 |---|---|
 | [`case-cortex`](case-cortex/) | Build and maintain a **Case Cortex**: a structured, living, file-based memory for a single bounded knowledge-work problem — a deal, a matter, an investigation, a research question. Four layers (canonical facts, working memory, derived artifacts, pointers), six workflows (initialize, seed, ingest, maintain, use, lint), full provenance on everything. |
+| [`creative-act-guide`](creative-act-guide/) | **Antenna** — a quiet guide through the creative act, shaped by Rick Rubin's *The Creative Act*. Never supplies ideas; guides with one question, one short quote, one working method, or one real-world assignment per turn. Ships with a deployable standalone system prompt and an animated ASCII companion visual. |
 
 ## Feedback and contributions
 
