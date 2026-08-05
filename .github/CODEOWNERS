@@ -1,3 +1,4 @@
-# Every change to this repository needs review from a Pioneer maintainer.
-# See CONTRIBUTING.md for the contribution and contamination-check process.
-* @accilium/aiq-pioneers
+# Every change to this repository needs review from a public-repository maintainer.
+# Skills are published here by maintainers only, after internal review covering
+# sanitization and publishing rights. See CONTRIBUTING.md.
+* @accilium/aiq-public-maintainers
