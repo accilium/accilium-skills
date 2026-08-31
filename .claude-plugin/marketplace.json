@@ -6,6 +6,16 @@
   },
   "plugins": [
     {
+      "name": "ai-policy-assessment-skill",
+      "description": "Checks an existing AI policy and answers two questions a management team asks: what does the law require of us that we have not covered, and where are we stricter than the law asks, at our own cost. Produces one self-contained HTML report — coverage figures, a risk-versus-strictness grid, and 27 criteria with the policy sentence each finding rests on. Triggers on: \"check our AI policy\", \"rate our AI policy\", \"is our AI policy blocking the business\", \"what does the AI Act require of us\". Do NOT use for writing a policy from scratch, a legal opinion, or an ISO 42001 certification audit.",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./ai-policy-assessment-skill"
+      ],
+      "version": "2.0.0"
+    },
+    {
       "name": "case-cortex",
       "description": "Build and maintain a Case Cortex — a structured, living, machine-readable representation of a single bounded knowledge-work problem (a deal, a matter, an investigation, a research question) that agents and humans share as their reasoning substrate. Triggers on: \"build a cortex for X\", \"start a new case\", \"seed my cortex\", \"ingest this into the cortex\", \"what does the cortex say about Y\", \"lint the cortex\". Do NOT use for casual long-running tasks, one-shot research, or general-purpose wikis spanning multiple problems.",
       "source": "./",

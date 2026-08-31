@@ -27,6 +27,7 @@ A skill is a folder containing a `SKILL.md` file (plus optional references and t
 
 | Skill | What it does |
 |---|---|
+| [`ai-policy-assessment-skill`](ai-policy-assessment-skill/) | Reads an existing AI policy and checks it in two directions: **what the law requires that the policy does not cover**, and **where the policy is stricter than the law asks, at the company's own cost**. A short intake picks the applicable legal frame (EU AI Act, GDPR, NIS2, sector acts, trade secrets, works council, ISO 42001). 27 criteria are then scored against the document, with a verbatim quote behind every finding. Output is one self-contained HTML report a management team can read. |
 | [`case-cortex`](case-cortex/) | Build and maintain a **Case Cortex**: a structured, living, file-based memory for a single bounded knowledge-work problem — a deal, a matter, an investigation, a research question. Four layers (canonical facts, working memory, derived artifacts, pointers), six workflows (initialize, seed, ingest, maintain, use, lint), full provenance on everything. |
 
 ## Feedback and contributions
