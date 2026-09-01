@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Policy Check — {{CLIENT}}</title>
+<style>
+/* ═══════════════════ design tokens ═══════════════════
+   Colour carries direction only: teal = in order, magenta = needs attention,
+   grey = neutral or not applicable. Never magnitude — a number carries that.
+   Gap and Too strict share the hue and are separated by filled vs hollow, so
+   the distinction survives greyscale printing and red-green deficiency.
+   Palette validated: CVD separation deltaE 8.3 deutan, 20.4 normal. PASS.   */
+:root{
+  --deep-teal:#00333F; --teal:#00677F; --mint:#54DBC0; --mid-teal:#249C97;
+  --magenta:#990F4F;
+  --ink:#0E2B33; --muted:#5A6B71; --gray:#929292; --line:rgba(0,51,63,.10);
+  --bg:#F6F8F9; --card:#FFFFFF;
+  --ok:var(--teal); --bad:var(--magenta); --neutral:var(--gray);
+  --gradient-header:linear-gradient(135deg,#00333F 0%,#005268 55%,#00677F 100%);
+  --font:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --r:10px; --shadow:0 1px 4px rgba(0,51,63,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding:0 24px 56px}
+h1,h2,h3{margin:0;font-weight:700;line-height:1.15}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── header ── */
+header{background:var(--gradient-header);color:#fff;position:relative;padding:30px 0 26px}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--mint)}
+.hd{max-width:1320px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;
+  align-items:flex-end;gap:24px;flex-wrap:wrap}
+/* margin-left:auto keeps the badge block on the right edge of its line even
+   after a long headline forces it onto a second line */
+.hd > div:last-child{margin-left:auto}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--mint);margin-bottom:8px}
+header h1{font-size:clamp(22px,2.4vw,32px);max-width:62ch}
+header .sub{margin-top:8px;opacity:.85;font-size:14px}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.22);
+  border-radius:999px;padding:5px 12px;font-size:11.5px;white-space:nowrap}
+
+/* ── disclaimer: said once, prominently, and not sticky ── */
+.disclaimer{background:#F0EDE8;border-bottom:1px solid var(--line);color:var(--ink);
+  font-size:12.5px;line-height:1.5;text-align:center;padding:10px 24px}
+.disclaimer b{color:var(--deep-teal)}
+.disclaimer a{color:var(--teal);font-weight:700;text-decoration:none}
+.disclaimer a:hover{text-decoration:underline}
+#source-basis{scroll-margin-top:64px}
+
+/* ── tabs ── */
+.tabs{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);
+  margin:0 -24px 28px;padding:0 24px}
+.tabs-inner{max-width:1320px;margin:0 auto;display:flex;gap:4px;overflow-x:auto}
+.tab-btn{flex:0 0 auto;display:flex;align-items:center;gap:9px;background:none;border:none;
+  border-bottom:3px solid transparent;padding:14px 6px 11px;margin:0 16px 0 0;cursor:pointer;
+  font-family:inherit;font-size:13px;font-weight:700;color:var(--muted);white-space:nowrap}
+.tab-btn .n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--line);
+  color:var(--muted);font-size:12px;font-weight:700;display:flex;align-items:center;
+  justify-content:center}
+.tab-btn[aria-selected="true"]{color:var(--deep-teal);border-bottom-color:var(--teal)}
+.tab-btn[aria-selected="true"] .n{background:var(--deep-teal);color:#fff}
+.tabpanel[hidden]{display:none}
+@media(max-width:660px){.tab-btn span.lbl{display:none}}
+
+/* ── scaffolding ── */
+.sec{margin-top:30px}
+.sec > h2{font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:20px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}
+.part{display:flex;gap:14px;align-items:flex-start;margin:0 0 18px}
+.part .n{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--deep-teal);
+  color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.part h2{margin:5px 0 0;font-size:15px;color:var(--deep-teal)}
+.part p{margin:5px 0 0;font-size:12.5px;color:var(--muted);max-width:76ch}
+.intro{margin:0 0 14px;color:var(--muted);font-size:13px}
+
+/* ── overview ── */
+.brief .lead{margin:0 0 18px;font-size:14px;line-height:1.6}
+.brief .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.brief .facts > div{padding:12px 14px;border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line)}
+.brief .facts .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--gray)}
+.brief .facts .v{font-size:13px;font-weight:700;color:var(--deep-teal);margin-top:4px;
+  overflow-wrap:break-word}
+.brief .streams{margin:18px 0 0;padding:12px 14px;border-left:3px solid var(--mint);
+  background:rgba(84,219,192,.07);font-size:13px}
+@media(max-width:860px){.brief .facts{grid-template-columns:1fr 1fr}}
+.assumed{margin-top:14px;font-size:12px;color:var(--muted)}
+
+/* ── legal frame rows ── */
+.lgl{display:grid;grid-template-columns:minmax(140px,190px) minmax(96px,150px) minmax(240px,1fr);
+  gap:14px;align-items:baseline;font-size:12.5px;padding:9px 0;border-bottom:1px solid var(--line)}
+.lgl:last-child{border-bottom:0}
+.lgl .st{font-weight:700}
+.lgl .why{color:var(--muted);font-size:11.5px;line-height:1.5}
+@media(max-width:760px){.lgl{grid-template-columns:1fr;gap:4px}.lgl .why{margin-bottom:6px}}
+.diverg{margin-top:16px;border-left:4px solid var(--magenta);
+  background:rgba(153,15,79,.045);padding:14px 16px;border-radius:6px;font-size:13px}
+.diverg b{color:var(--magenta)}
+
+/* ── insight ── */
+.insight{border-left:4px solid var(--mint);background:var(--card);padding:18px 20px;
+  border-radius:var(--r);border-top:1px solid var(--line);border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);box-shadow:var(--shadow);font-size:15.5px;line-height:1.55}
+.insight b{color:var(--deep-teal)}
+
+/* ── the four tiles: one number, one word, five segments ── */
+.tiles{grid-template-columns:repeat(auto-fit,minmax(215px,1fr))}
+.tile{border-left:4px solid var(--teal);padding:16px 18px}
+.tile.is-bad{border-left-color:var(--magenta)}
+.tile.is-neutral{border-left-color:var(--gray)}
+.tile .lbl{font-size:11.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.tile .val{font-size:34px;font-weight:700;line-height:1.1;margin-top:6px;color:var(--deep-teal)}
+.tile .val small{font-size:15px;font-weight:400;color:var(--muted)}
+.tile .segs{display:flex;gap:4px;margin-top:10px}
+.tile .segs i{flex:1 1 0;height:7px;border-radius:2px;background:rgba(0,51,63,.09)}
+.tile .segs i.on{background:var(--teal)}
+.tile.is-bad .segs i.on{background:var(--magenta)}
+.tile .note{font-size:11.5px;color:var(--muted);margin-top:8px}
+
+/* ── matrix: the count, and nothing else, in each cell ── */
+.matrix-wrap{display:grid;grid-template-columns:1fr 250px;gap:20px;align-items:start}
+@media(max-width:900px){.matrix-wrap{grid-template-columns:1fr}}
+.matrix-wrap svg{width:100%;height:auto;overflow:visible}
+.axis{font-size:11px;fill:var(--muted)}
+.axis.role{font-size:10px;fill:var(--gray);letter-spacing:.06em;text-transform:uppercase}
+.qname{font-size:11.5px;font-weight:700}
+.cnum{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.legend{display:flex;flex-direction:column;gap:12px;font-size:12.5px}
+.legend .row{display:flex;gap:10px;align-items:flex-start}
+/* the exact same wash the findings table and the risk list use for these three
+   verdicts (.tag.ok/.gap/.strict) — one recipe, reused everywhere, so a colour
+   means the same thing wherever it appears in the report                    */
+/* A swatch this small needs more colour than a matrix cell to read as "filled" —
+   the same 14% wash that covers a whole cell is nearly invisible at 16px. Same
+   hue, same filled/hollow logic, tuned for size rather than forced to one number. */
+.legend .sw{width:16px;height:16px;border-radius:5px;flex:0 0 16px;margin-top:1px}
+.legend .sw.ok{background:rgba(0,103,127,.55)}
+.legend .sw.gap{background:rgba(153,15,79,.5)}
+.legend .sw.strict{background:transparent;box-shadow:inset 0 0 0 2px var(--magenta)}
+.legend .txt small{display:block;color:var(--muted);font-size:11.5px;margin-top:1px}
+.legend .how{margin-top:4px;padding-top:12px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--muted);line-height:1.5}
+
+/* ── open duties ── */
+.duty{display:grid;grid-template-columns:1fr 180px 46px;gap:14px;align-items:start;
+  font-size:12.5px;padding:11px 0;border-bottom:1px solid var(--line)}
+.duty:last-child{border-bottom:0}
+.duty.hd{padding:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--line)}
+.duty.hd .l{color:var(--muted)}
+.scale-key{display:flex;flex-wrap:wrap;gap:6px 14px;margin:10px 0 16px;
+  font-size:11.5px;color:var(--muted)}
+.scale-key b{color:var(--ink);font-variant-numeric:tabular-nums}
+.duty .t b{color:var(--deep-teal)}
+.duty .t small{display:block;color:var(--magenta);font-size:11.5px;margin-top:3px}
+.duty .t .cid{color:var(--gray);font-weight:400;font-size:11px}
+.duty .n{color:var(--muted);font-size:11.5px}
+.duty .l{text-align:right;font-weight:700;color:var(--magenta);font-size:14px}
+@media(max-width:700px){.duty{grid-template-columns:1fr 34px}.duty .n{grid-column:1/-1}}
+
+/* ── required vs your choice ── */
+.lat .row{display:grid;grid-template-columns:21% 27% 34% 18%;gap:16px;padding:14px 0;
+  border-bottom:1px solid var(--line);align-items:start}
+.lat .row > *{min-width:0;overflow-wrap:break-word}
+.lat .row:last-child{border-bottom:0}
+.lat .row.hd{padding:0 0 8px;font-size:11px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted)}
+.lat .topic{font-weight:700;color:var(--deep-teal);font-size:13px}
+.lat .norm-ref{display:block;color:var(--muted);font-size:11px;font-weight:400;margin-top:3px}
+.lat p{margin:0;font-size:12.5px}
+.lat .use{font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px;
+  justify-self:start;text-align:center}
+.lat .use.used{background:rgba(0,103,127,.12);color:var(--deep-teal)}
+.lat .use.unused{background:rgba(153,15,79,.10);color:var(--magenta)}
+.lat .use.beyond{background:rgba(146,146,146,.16);color:#5f5f5f}
+.lat .evi{margin-top:6px;font-size:11.5px;color:var(--muted);font-style:italic;
+  border-left:2px solid var(--line);padding-left:9px}
+@media(max-width:860px){.lat .row{grid-template-columns:1fr;gap:6px}.lat .row.hd{display:none}}
+
+/* ── risk categories: named, with a status each, never a ratio bar ── */
+.risks{display:grid;gap:2px}
+.risk{display:grid;grid-template-columns:64px 1fr 96px;gap:12px;align-items:start;
+  padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.risk:last-child{border-bottom:0}
+.risk .rid{font-weight:700;color:var(--deep-teal);font-variant-numeric:tabular-nums}
+.risk .rn{font-weight:700}
+.risk .rnote{display:block;color:var(--muted);font-size:11.5px;margin-top:3px;
+  font-weight:400}
+.risk .rrefs{display:block;color:var(--gray);font-size:11px;margin-top:3px}
+.risk .st{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;
+  justify-self:start;white-space:nowrap}
+.risk .st.ok{background:rgba(0,103,127,.11);color:var(--teal)}
+.risk .st.partial{background:transparent;color:var(--magenta);
+  box-shadow:inset 0 0 0 1.5px var(--magenta)}
+.risk .st.gap{background:rgba(153,15,79,.10);color:var(--magenta)}
+.risk .st.na{background:rgba(146,146,146,.16);color:#5f5f5f}
+@media(max-width:700px){.risk{grid-template-columns:56px 1fr}
+  .risk .st{grid-column:2}}
+
+/* ── coverage bars ── */
+.norms{display:grid;gap:9px}
+.grp{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);margin:16px 0 2px}
+.grp:first-child{margin-top:0}
+.grp small{display:block;font-weight:400;letter-spacing:0;text-transform:none;
+  color:var(--gray);font-size:11px;margin-top:2px}
+.norm{display:grid;grid-template-columns:minmax(120px,180px) 1fr 52px;gap:12px;
+  align-items:center;font-size:12.5px}
+.track{display:block;height:9px;background:rgba(0,51,63,.07);border-radius:5px;overflow:hidden}
+.fill{display:block;height:100%;background:var(--teal);border-radius:5px}
+.norm .pc{text-align:right;color:var(--muted);font-size:12px}
+/* optional/standards rows read lighter than a legal shortfall, on purpose */
+.norm.is-optional{font-size:11.5px;opacity:.82}
+.norm.is-optional .track{height:6px}
+.norm.is-optional .fill{background:var(--gray)}
+.norm.is-optional .pc{color:var(--gray)}
+
+/* ── filters + findings table ── */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 13px;
+  font-size:12.5px;cursor:pointer;font-family:inherit;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--mint);border-color:var(--mint);
+  color:var(--deep-teal);font-weight:700}
+.chip:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--muted);font-weight:700;padding:0 10px 9px;border-bottom:1px solid var(--line)}
+td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:hover{background:rgba(84,219,192,.09)}
+.tag{display:inline-block;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;
+  white-space:nowrap}
+.tag.ok{background:rgba(0,103,127,.11);color:var(--teal)}
+.tag.gap{background:rgba(153,15,79,.10);color:var(--magenta)}
+.tag.strict{background:transparent;color:var(--magenta);box-shadow:inset 0 0 0 1.5px var(--magenta)}
+.tag.law{background:rgba(153,15,79,.10);color:var(--magenta)}
+.tag.choice{background:rgba(146,146,146,.16);color:#5f5f5f}
+.lvl{font-weight:700;font-size:15px}
+.stmt{font-size:13px}
+.cid{color:var(--gray);font-size:11px;white-space:nowrap}
+.evi{margin-top:6px;font-size:11.5px;color:var(--muted);border-left:2px solid var(--line);
+  padding-left:9px;font-style:italic}
+.evi b{font-style:normal;color:var(--ink)}
+.blocked{margin-top:6px;font-size:11.5px;color:var(--magenta)}
+.rec{margin-top:7px;font-size:12px;color:var(--deep-teal)}
+.rec::before{content:"› ";color:var(--mid-teal);font-weight:700}
+.empty{display:none;padding:18px 10px;color:var(--muted);font-size:13px}
+
+/* ── alerts ── */
+.alert{border-left:4px solid var(--magenta);background:var(--card);border-radius:var(--r);
+  padding:18px 20px;border-top:1px solid var(--line);border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);box-shadow:var(--shadow);margin-bottom:12px}
+.alert:last-child{margin-bottom:0}
+.alert h3{font-size:14.5px;color:var(--magenta);margin-bottom:6px}
+.alert p{margin:0;font-size:13.5px}
+.alert .basis{margin-top:10px;font-size:11.5px;color:var(--gray)}
+
+/* ── not assessed + footer ── */
+.na-list{display:flex;flex-wrap:wrap;gap:7px}
+.na-item{font-size:11.5px;background:rgba(146,146,146,.13);color:#5f5f5f;
+  border-radius:6px;padding:4px 9px}
+footer{margin-top:38px;padding-top:18px;border-top:1px solid var(--line);
+  font-size:11.5px;color:var(--muted)}
+footer h3{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  margin:16px 0 6px}
+footer h3:first-child{margin-top:0}
+footer p{margin:0 0 4px;max-width:100ch}
+.classification{float:right;font-weight:700;color:var(--muted)}
+
+/* ── tooltip: an extra, never the only path to the content ── */
+#tip{position:fixed;pointer-events:none;opacity:0;transition:opacity .12s;z-index:50;
+  background:var(--deep-teal);color:#fff;border-radius:7px;padding:9px 12px;font-size:12px;
+  max-width:300px;box-shadow:0 6px 22px rgba(0,51,63,.28);line-height:1.45}
+#tip b{color:var(--mint)}
+
+@media print{
+  body{background:#fff}
+  .filters,#tip{display:none}
+  .card{break-inside:avoid;box-shadow:none}
+  /* tabs are a screen convenience; print shows all three parts in sequence */
+  .tabs{display:none}
+  .tabpanel[hidden]{display:block}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hd">
+    <div>
+      <div class="eyebrow">AI Policy Check</div>
+      <h1 id="h-title">—</h1>
+      <div class="sub" id="h-sub">—</div>
+    </div>
+    <div style="text-align:right">
+      <div class="badges" id="h-badges"></div>
+    </div>
+  </div>
+</header>
+
+<div class="disclaimer" role="note">
+  <b>Not legal advice, and it assesses the document rather than the practice.</b>
+  Use it as a starting point and have the findings confirmed by legal counsel — and
+  note that a policy nobody follows still scores well here. Legal texts were last
+  checked <b id="d-asof">—</b>; check for amendments since. See
+  <a href="#source-basis">Basis and limits</a> at the end.
+</div>
+
+<div class="wrap">
+
+  <nav class="tabs" aria-label="Report parts">
+    <div class="tabs-inner" id="tabnav"></div>
+  </nav>
+
+  <!-- ════════ 1 · Overview ════════ -->
+  <div class="tabpanel" data-tab="1" id="tabpanel-1">
+    <section class="sec">
+      <div class="part"><span class="n">1</span>
+        <div><h2>Who this is, and which laws apply</h2>
+          <p>What the check was calibrated to. Every judgement further on should be
+             read against this — the same rule can be right for one company and
+             wrong for another.</p></div>
+      </div>
+      <div class="card brief">
+        <p class="lead" id="b-lead"></p>
+        <div class="facts" id="b-facts"></div>
+        <div class="streams" id="b-streams" hidden></div>
+        <div class="assumed" id="b-assumed" hidden></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>Which laws apply to you</h2>
+      <div class="card">
+        <p class="intro">Derived from your answers, not from what the policy claims.
+           The right-hand column names the answer each one follows from, so you can
+           check it.</p>
+        <div id="legal"></div>
+        <div id="divergence"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ════════ 2 · Management summary ════════ -->
+  <div class="tabpanel" data-tab="2" id="tabpanel-2" hidden>
+    <section class="sec">
+      <div class="part"><span class="n">2</span>
+        <div><h2>The short version</h2>
+          <p>The tiles and the grid — coverage, exposure, and whether the rules
+             match the risk. Every number here is unpacked in Deep Dives.</p></div>
+      </div>
+      <div class="insight" id="insight"></div>
+    </section>
+
+    <section class="sec" id="alert-sec" hidden>
+      <h2>Settle this before anything else</h2>
+      <div id="alerts"></div>
+    </section>
+
+    <section class="sec">
+      <h2>Where you stand</h2>
+      <div class="grid tiles" id="tiles"></div>
+    </section>
+
+    <section class="sec">
+      <h2>Do the rules match the risk?</h2>
+      <div class="card">
+        <p class="intro">Each square holds the number of checks that landed there.
+           Reading down the left-hand side is the security question — how high is the
+           risk really. Reading along the bottom is the business question — how
+           strictly does the policy govern it. Squares near the diagonal are
+           proportionate; the two corners are the two ways to get it wrong.</p>
+        <div class="matrix-wrap">
+          <svg id="matrix" viewBox="0 0 620 450" role="img"
+               aria-label="Risk against strictness of the rules"></svg>
+          <div>
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ════════ 3 · Detail ════════ -->
+  <div class="tabpanel" data-tab="3" id="tabpanel-3" hidden>
+    <section class="sec">
+      <div class="part"><span class="n">3</span>
+        <div><h2>What the law requires, in detail</h2>
+          <p>Five things, in order: which legal duties are still open, what the law
+             fixes versus what is your choice, how much of each law and standard is
+             covered, which AI-specific risks are checked, and every finding with the
+             sentence in the policy it rests on.</p></div>
+      </div>
+      <h2>Legal duties that are still open</h2>
+      <div class="card">
+        <p class="intro" id="duty-intro"></p>
+        <div id="duties"></div>
+      </div>
+    </section>
+
+    <section class="sec" id="lat-sec" hidden>
+      <h2>What is required, and what you decide</h2>
+      <div class="card">
+        <p class="intro">Some of this is fixed by law. The rest is genuinely your
+           choice, even where the policy writes it as if it were fixed. This table
+           splits the two, topic by topic, and shows which way your policy decided.</p>
+        <div class="lat" id="latitude"></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>How much of each law and standard is covered</h2>
+      <div class="card">
+        <p class="intro">For each law or standard below: of the checks in this report
+           that reference it, how many reached level 4 or higher. Not a percentage of
+           the full legal text, and not a certificate.</p>
+        <div class="norms" id="norms"></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>AI-specific risks — what was checked</h2>
+      <div class="card">
+        <p class="intro" id="risk-intro"></p>
+        <div class="risks" id="risks"></div>
+        <div id="risks-unchecked"></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>Findings</h2>
+      <p class="intro">Every check in this report, one row each — what it found, the
+         sentence in the policy behind it, and what to change. Filter by area or by
+         type.</p>
+      <div class="scale-key"><span><b>1</b> not addressed</span>
+        <span><b>2</b> mentioned, no obligation</span>
+        <span><b>3</b> not usable yet</span>
+        <span><b>4</b> usable</span>
+        <span><b>5</b> usable and checked</span></div>
+      <div class="filters" id="filters"></div>
+      <div class="card" style="padding:18px 12px">
+        <div style="overflow-x:auto">
+          <table>
+            <thead><tr>
+              <th style="width:96px">Basis</th>
+              <th style="width:104px">Verdict</th>
+              <th style="width:64px">Level<br><span style="font-weight:400;text-transform:none;letter-spacing:0">of 5</span></th>
+              <th>What it says, and what to change</th>
+            </tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div class="empty" id="empty">Nothing in this filter.</div>
+      </div>
+    </section>
+
+    <section class="sec" id="na-sec" hidden>
+      <h2>Deliberately not assessed</h2>
+      <div class="card">
+        <p class="intro">These checks do not apply to your setup, so they are not
+           scored. Listed here so the coverage figures above are not read as broader
+           than they are.</p>
+        <div class="na-list" id="na"></div>
+      </div>
+    </section>
+  </div>
+
+  <footer>
+    <span class="classification" id="f-class"></span>
+    <h3 id="source-basis">Basis and limits</h3>
+    <p id="f-method"></p>
+    <p id="f-scope"></p>
+    <p id="f-depth"></p>
+    <p id="f-sources"></p>
+    <p><b>Not legal advice.</b> Mapping findings to legal provisions is orientation,
+       not a statement of conformity and not audit evidence. Where applicability
+       depends on a classification that could not be settled here, this report names
+       it as a question for legal rather than as a finding.</p>
+    <p><b>The document was assessed, not the practice.</b> A policy nobody follows is
+       rated well here. Coverage figures are ratios over this catalogue of checks, not
+       over the full text of any document, and there is no overall score in per
+       cent — a single blended number would hide the divergence that matters.</p>
+    <p style="margin-top:12px" id="f-foot"></p>
+  </footer>
+</div>
+
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   Replace this object only. Everything below it is the renderer and stays as
+   it is. See references/report.md for what each field means.
+   ══════════════════════════════════════════════════════════════════════════ */
+const REPORT_DATA = {
+  meta: {
+    client: "Example Group",
+    policy: "AI Policy v2.1 (as of 03/2026)",
+    generated: "2026-01-01",
+    legal_asof: "2026-08-06",
+    classification: "Confidential",
+    depth: "standard",
+    method: "27 checks in the catalogue, 21 active, 6 not applicable.",
+    assumed: ["what already exists internally", "state of the entity-level procedures"],
+    scope: "S2",
+    scope_text: "one legal entity, EU-wide operations, roughly 900 staff",
+    scope_note: "A rule counts as actionable here when it names a requirement, an accountable person and a process, or points to a specific binding document.",
+    brief: "Example Group builds industrial control systems and sells them across the EU. AI is used through two SaaS assistants and one API-based assistant built on the company's own document store; a small number of workflows can write to ticketing and to the code repository. Personal data of staff and customers is in scope, as are design documents that carry trade-secret protection. The document assessed is a group-wide AI policy of 24 pages, approved in March 2026.",
+    value_streams: "Engineering-to-order project delivery and after-sales service. The AI leverage sits in generating technical documentation and in first-line triage of service tickets.",
+    sources: "Cited: EU AI Act, GDPR, BetrVG, GeschGehG. Article wording is taken from the stored official text where available and is otherwise a paraphrase with a citation. The ISO control numbers are mapping aids against a licensed standard; a certification statement needs a check against the purchased text."
+  },
+  profile: {
+    "Scope": "Single company",
+    "Role": "User of AI, not a provider",
+    "Sourcing": "SaaS chat, API platform",
+    "Data": "Personal, trade secrets",
+    "Systems may": "Write \u2014 tickets, code",
+    "Operates in": "EU, staff in Germany"
+  },
+  headline: {
+    title: "Nine of twelve legal duties are covered. The three that are not all sit in logging, staff involvement and the use-case list.",
+    insight: "The policy is <b>strong on data rules and weak on who decides</b>. Three legal duties are open, and five rules answer flatly where the law allows a graduated answer \u2014 the tool ban with no way to request an exception is the one that costs the most, because it pushes the service desk towards tools nobody can see."
+  },
+  tiles: [
+    {label:"Legal duties met", value:"9", unit:"of 12",
+     note:"Three open: logging, the use-case list, works council involvement.", tone:"bad"},
+    {label:"Information security", value:"3.4", unit:"of 5", segments:3,
+     note:"Partial \u2014 the rules exist, but half of them name nobody accountable.", tone:"neutral"},
+    {label:"AI governance", value:"2.3", unit:"of 5", segments:2,
+     note:"Weak \u2014 no use-case list, no route to an exception.", tone:"bad"},
+    {label:"AI-specific risks", value:"2", unit:"of 7 checked",
+     note:"Instructions hidden in content the assistant reads are not addressed.", tone:"bad"},
+    {label:"Stricter than needed", value:"5", unit:"rules",
+     note:"Each can be graduated without breaching anything.", tone:"neutral"}
+  ],
+  legal: {
+    frameworks: [
+      {name:"EU AI Act", status:"applies", trigger:"Active in the EU (answer A)"},
+      {name:"GDPR", status:"applies", trigger:"Personal data in scope (answer D)"},
+      {name:"BetrVG \u00a7 87", status:"applies", trigger:"Staff in Germany, and the assistants log who invoked them (answer A and D)"},
+      {name:"GeschGehG", status:"applies", trigger:"Design documents under trade-secret protection (answer D)"},
+      {name:"NIS2", status:"to be checked", trigger:"Size and sector were not asked at this depth"},
+      {name:"CRA", status:"to be checked", trigger:"Whether the control systems count as products with digital elements is a question for legal"}
+    ],
+    divergence: "You described yourselves as a pure user of AI. Answer D says you build an assistant on your own document store, which stays within the user role \u2014 but if a fine-tuned model is ever shipped inside a product, the provider duties under AI Act Art. 16 apply in full. Worth settling now rather than at the point of shipping."
+  },
+  alerts: [],
+  duties: {
+    total: 12, met: 9,
+    open: [
+      {id:"USE-11", title:"Logging that an incident could be reconstructed from",
+       norm:"AI Act Art. 12, Art. 26(6)",
+       risk:"Supervisory measures, and no way to evidence oversight", level:2},
+      {id:"GOV-02", title:"A list of AI use cases with a risk rating",
+       norm:"GDPR Art. 30, AI Act Art. 49",
+       risk:"No record of processing activities for the AI systems", level:3},
+      {id:"GOV-10", title:"Involving the works council",
+       norm:"BetrVG \u00a7 87(1) no. 6",
+       risk:"Injunctive relief; the rollout stays contestable", level:1}
+    ]
+  },
+  latitude: [
+    {topic:"Customer data in AI systems", norm:"GDPR Art. 5, Art. 6",
+     must:"A legal basis, and protection appropriate to the data.",
+     choice:"Which systems, under which contract terms, with which classes of data. The law sets no blanket ban and none of the three assistants is excluded by it.",
+     evidence:"Section 4.2: \u201cCustomer data may not be entered into AI systems.\u201d",
+     use:"unused"},
+    {topic:"Which tools staff may use", norm:"no direct legal requirement",
+     must:"Nothing. This is entirely your decision.",
+     choice:"Whether an unlisted tool can be requested at all, and how long that takes.",
+     evidence:"Section 3.1: \u201cOnly the tools listed in Annex A may be used.\u201d",
+     use:"unused"},
+    {topic:"Human sign-off on automated actions", norm:"AI Act Art. 14",
+     must:"For high-risk systems, oversight by a competent person. None of your use cases is high risk today.",
+     choice:"Which classes of action need a sign-off, and at what threshold.",
+     evidence:"Section 5.4: \u201cAll automated actions require prior approval by the responsible manager.\u201d",
+     use:"unused"},
+    {topic:"Design documents in AI systems", norm:"GeschGehG \u00a7 2",
+     must:"Reasonable secrecy measures have to exist, or trade-secret protection lapses.",
+     choice:"Which measures. A ban is one option; a named system with a processing agreement is another.",
+     evidence:"Section 4.3: \u201cDesign data may only be processed in systems approved by IT security.\u201d",
+     use:"used"},
+    {topic:"Marking AI-generated content", norm:"AI Act Art. 50",
+     must:"Nothing yet \u2014 you publish no synthetic content and run no customer-facing chatbot.",
+     choice:"Whether to mark internally generated documentation anyway.",
+     evidence:"Section 7.2: \u201cAll AI-generated content must be marked as such in every case.\u201d",
+     use:"beyond"}
+  ],
+  findings: [
+    {id:"USE-11", nature:"duty", group:"use", type:"gap", level:2, risk:5, strictness:2,
+     statement:"Tool calls and automated approvals are not logged, so an incident could not be reconstructed afterwards.",
+     note:"There is no system evaluating AI logs today, so even a logging duty would have nowhere to land.",
+     evidence:{ref:"Section 6.1", quote:"Use of AI systems shall be documented appropriately."},
+     recommendation:"Name what has to be logged \u2014 the call, the target system, the identity that triggered it, the approval \u2014 and which system keeps it, for how long."},
+    {id:"GOV-10", nature:"duty_conditional", group:"governance", type:"gap", level:1, risk:4, strictness:1,
+     statement:"The works council is not mentioned, although the assistants record who invoked them, which makes conduct measurable.",
+     evidence:null,
+     recommendation:"Add a section stating that use cases which make performance or conduct measurable go to the works council before rollout, and name who takes them there."},
+    {id:"GOV-02", nature:"duty_conditional", group:"governance", type:"gap", level:3, risk:4, strictness:3,
+     statement:"A use-case list is required but nobody owns it and no rating scheme is given, so it cannot be filled in.",
+     evidence:{ref:"Section 2.3", quote:"All AI use cases are to be recorded centrally."},
+     recommendation:"Name the owner of the list, the four fields each entry needs, and who rates the risk."},
+    {id:"USE-12", nature:"choice", group:"use", type:"strict", level:4, risk:2, strictness:5,
+     statement:"Only the tools in Annex A may be used, and there is no way to ask for anything else.",
+     evidence:{ref:"Section 3.1", quote:"Only the tools listed in Annex A may be used."},
+     recommendation:"Add a request route with a named decider and a stated turnaround, so an unlisted tool becomes a two-week decision instead of a workaround."},
+    {id:"USE-04", nature:"choice", group:"use", type:"strict", level:4, risk:3, strictness:5,
+     statement:"Every automated action needs a manager's approval, whatever it does, which stops ticket triage from paying off at all.",
+     evidence:{ref:"Section 5.4", quote:"All automated actions require prior approval by the responsible manager."},
+     recommendation:"Tie the sign-off to the class of action: reading needs none, writing to a ticket needs the team lead, anything touching an order needs two people."},
+    {id:"DATA-01", nature:"choice", group:"data", type:"strict", level:3, risk:3, strictness:5,
+     statement:"Customer data is banned from AI systems outright, which excludes the service-ticket triage that the policy elsewhere encourages.",
+     note:"There is no data classification scheme, so even a graduated rule would have nothing to sort against yet.",
+     evidence:{ref:"Section 4.2", quote:"Customer data may not be entered into AI systems."},
+     recommendation:"Replace the ban with a two-column matrix of data class against approved system, and start the classification scheme that the rest of the policy already assumes."},
+    {id:"GOV-08", nature:"choice", group:"governance", type:"strict", level:4, risk:1, strictness:5,
+     statement:"All AI-generated content must be marked in every case, including internal drafts, where no duty applies.",
+     evidence:{ref:"Section 7.2", quote:"All AI-generated content must be marked as such in every case."},
+     recommendation:"Limit the marking duty to content that leaves the company, which is what Art. 50 actually reaches."},
+    {id:"MODEL-01", nature:"choice", group:"model", type:"strict", level:3, risk:2, strictness:4,
+     statement:"New models are admitted by the architecture board, but no route or timescale is described, so in practice nothing new gets admitted.",
+     evidence:{ref:"Section 3.2", quote:"New models are admitted by the architecture board."},
+     recommendation:"State what an admission request has to contain and how long a decision takes."},
+    {id:"GOV-05", nature:"choice", group:"governance", type:"gap", level:2, risk:4, strictness:2,
+     statement:"There is no way to request an exception, so every strict rule in the policy is either a blocker or something people quietly break.",
+     evidence:{ref:"Section 1.4", quote:"Deviations from this policy are not permitted."},
+     recommendation:"Add a one-page exception route: who requests, who decides, a maximum term of twelve months, and where it is recorded."},
+    {id:"DATA-05", nature:"duty", group:"data", type:"gap", level:2, risk:3, strictness:2,
+     statement:"Prompt histories and chat logs have no retention period and no owner, so a deletion request would not reach them.",
+     evidence:{ref:"Section 4.5", quote:"Data is retained no longer than necessary."},
+     recommendation:"Set a retention period for prompts, outputs and logs, and name who deletes them when a data subject asks."},
+    {id:"USE-01", nature:"choice", group:"use", type:"gap", level:2, risk:4, strictness:2,
+     statement:"Manipulation is described only as something a user might type, not as instructions arriving inside a document or a ticket the assistant reads.",
+     evidence:{ref:"Section 5.2", quote:"Employees must not attempt to circumvent the safety measures of AI systems."},
+     recommendation:"State that content the system reads is untrusted input, and that a ticket or attachment can carry instructions."},
+    {id:"INFRA-03", nature:"choice", group:"infra", type:"gap", level:1, risk:4, strictness:1,
+     statement:"The assistant searches the company document store, but nothing requires the search index to respect the access rights of the systems the documents came from.",
+     evidence:null,
+     recommendation:"Require access rights to be enforced per document at query time, and name who may add a source to the index."},
+    {id:"DATA-02", nature:"duty", group:"data", type:"ok", level:4, risk:4, strictness:4,
+     statement:"Legal basis, purpose and minimisation are governed specifically for AI processing, with data protection named as the accountable function.",
+     evidence:{ref:"Section 4.1", quote:"Any AI processing of personal data requires a documented legal basis, confirmed by the data protection officer before go-live."},
+     recommendation:"Add the threshold at which an impact assessment becomes necessary, so the rule can be applied without asking."},
+    {id:"DATA-07", nature:"duty_conditional", group:"data", type:"ok", level:4, risk:5, strictness:4,
+     statement:"Design data may only be processed in systems approved by IT security, which is a reasonable secrecy measure in the sense the Trade Secrets Act requires.",
+     evidence:{ref:"Section 4.3", quote:"Design data may only be processed in systems approved by IT security. The current list of approved systems is maintained in the IT security wiki."},
+     recommendation:"Add the review interval for the approved-systems list, so the reference does not go stale."},
+    {id:"GOV-01", nature:"duty", group:"governance", type:"ok", level:4, risk:4, strictness:4,
+     statement:"Accountability is assigned per use case, with IT security, data protection and legal named and an AI board as the decision body.",
+     evidence:{ref:"Section 2.1", quote:"Each AI use case has a named owner in the business. The AI board decides on admission and on exceptions."},
+     recommendation:"Add how often the AI board meets, so an admission decision has a predictable date."},
+    {id:"INFRA-07", nature:"duty_conditional", group:"infra", type:"ok", level:4, risk:3, strictness:3,
+     statement:"AI vendors go through the existing vendor assessment, and the place of processing has to be inside the EU.",
+     evidence:{ref:"Section 8.2", quote:"AI service providers are assessed under the group procurement standard. Processing must take place within the EU."},
+     recommendation:"Add an exit requirement: what happens to prompts, outputs and fine-tunes when a vendor contract ends."},
+    {id:"MODEL-04", nature:"duty_conditional", group:"model", type:"ok", level:4, risk:3, strictness:4,
+     statement:"An evaluation against defined criteria is required before go-live, with IT security signing off.",
+     evidence:{ref:"Section 3.4", quote:"Before go-live each use case is tested against the acceptance criteria in Annex B and signed off by IT security."},
+     recommendation:"Add adversarial testing for use cases that can write to another system."}
+  ],
+  norms: [
+    {name:"EU AI Act", kind:"law", covered:6, total:10},
+    {name:"GDPR", kind:"law", covered:4, total:7},
+    {name:"BetrVG", kind:"law", covered:0, total:1},
+    {name:"GeschGehG", kind:"law", covered:1, total:1},
+    {name:"ISO/IEC 27001", kind:"standard", covered:5, total:12},
+    {name:"ISO/IEC 42001", kind:"standard", covered:3, total:8}
+  ],
+  risks: [
+    {id:"LLM01", name:"Instructions hidden in content the system reads",
+     status:"gap", refs:"USE-01",
+     note:"Only what a user types is covered; a ticket or attachment carrying instructions is not."},
+    {id:"LLM02", name:"Confidential data leaving through an AI system",
+     status:"partial", refs:"DATA-01 \u00b7 DATA-04 \u00b7 USE-02",
+     note:"The vendor contract rules out training on your data, but nothing restricts where the assistant environment can send data."},
+    {id:"LLM03", name:"A system doing more than the task needs",
+     status:"partial", refs:"USE-03 \u00b7 USE-04",
+     note:"Sign-off is required for everything, which is strict but undifferentiated \u2014 no rule ties permission to the class of action."},
+    {id:"LLM04", name:"The model or vendor changing under you",
+     status:"ok", refs:"MODEL-01 \u00b7 MODEL-05 \u00b7 INFRA-07",
+     note:"Admission, re-approval on version change and an EU processing requirement are all governed."},
+    {id:"LLM05", name:"Poisoned training data or knowledge sources",
+     status:"na", refs:"MODEL-03 \u00b7 INFRA-03",
+     note:"You neither fine-tune nor curate a shared index, so there is nothing to poison."},
+    {id:"LLM07", name:"Confident wrong answers acted on",
+     status:"ok", refs:"USE-09",
+     note:"Outputs must be checked before they leave the company, with the reviewer named."},
+    {id:"LLM09", name:"The search index ignoring who may see what",
+     status:"gap", refs:"INFRA-03",
+     note:"The assistant searches the document store, but nothing requires per-document access rights at query time."},
+    {id:"LLM10", name:"Output used unchecked in another system",
+     status:"gap", refs:"USE-09",
+     note:"Review is required before publication but not before an output is written into a ticket or the repository."},
+    {id:"LLM06", name:"Runaway cost, or a model extracted through volume",
+     status:"gap", refs:null,
+     note:"No criterion in this catalogue covers it \u2014 it is an operations and commercial control more than a policy statement."},
+    {id:"LLM08", name:"System prompt or hidden context leaking",
+     status:"gap", refs:null,
+     note:"Not checked here. It matters most where a company builds its own assistant, which you do \u2014 worth raising outside this report."}
+  ],
+  na: [
+    {id:"MODEL-03", reason:"No fine-tuning of your own"},
+    {id:"MODEL-05", reason:"Covered by the existing change management, specifically referenced"},
+    {id:"USE-02", reason:"No system acts unattended"},
+    {id:"USE-03", reason:"No system acts under an identity of its own"},
+    {id:"INFRA-01", reason:"No unattended execution environment"},
+    {id:"GOV-03", reason:"Role settled as user in part 1; no provider duties in scope"}
+  ]
+};
+/* ═══════════════════════ renderer — do not rewrite ═══════════════════════ */
+const D = REPORT_DATA;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g,
+  c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* Three types. Gap and Too strict share the hue and differ by filled vs hollow,
+   so the distinction holds in greyscale and under red-green deficiency. No
+   glyphs: a legend of shapes inside every cell was noise, not information. */
+const TYPE = {
+  ok:     {label:"On point",   cls:"ok",
+           desc:"proportionate to the risk, and specific enough to act on"},
+  gap:    {label:"Gap",        cls:"gap",
+           desc:"a real risk the policy does not cover"},
+  strict: {label:"Too strict", cls:"strict",
+           desc:"a flat answer where the law allows a graduated one"}
+};
+const GROUPS = [
+  {id:'data', n:'Data'}, {id:'model', n:'Models'}, {id:'use', n:'Use'},
+  {id:'infra', n:'Infrastructure'}, {id:'governance', n:'Governance'}
+];
+const isDuty = f => f.nature === 'duty' || f.nature === 'duty_conditional';
+
+/* ── tabs ── */
+const TABS = [{n:1,lbl:"Input Overview"},{n:2,lbl:"Management Summary"},
+              {n:3,lbl:"Deep Dives"}];
+$('tabnav').innerHTML = TABS.map(x => `
+  <button class="tab-btn" data-tab="${x.n}" role="tab"
+    aria-selected="${x.n===1}" aria-controls="tabpanel-${x.n}">
+    <span class="n">${x.n}</span><span class="lbl">${esc(x.lbl)}</span>
+  </button>`).join('');
+$('tabnav').addEventListener('click', e => {
+  const b = e.target.closest('.tab-btn'); if (!b) return;
+  const n = b.dataset.tab;
+  document.querySelectorAll('.tabpanel').forEach(p => p.hidden = p.dataset.tab !== n);
+  document.querySelectorAll('.tab-btn').forEach(x =>
+    x.setAttribute('aria-selected', String(x.dataset.tab === n)));
+  document.querySelector('.tabs').scrollIntoView({block:'start'});
+});
+
+/* ── header ── */
+$('h-title').textContent = D.headline.title;
+$('h-sub').textContent   = `${D.meta.client} · ${D.meta.policy}`;
+const DEPTH = {quick:'Quick', standard:'Standard', extensive:'Extensive'};
+/* the scope codes are internal; the footer names them in plain words */
+const SCOPE = {S1:'Group policy', S2:'Single-company policy',
+               S3:'Function policy', S4:'Use-case policy'};
+$('h-badges').innerHTML = [
+  `Generated ${D.meta.generated}`,
+  `${D.findings.length} findings`,
+  DEPTH[D.meta.depth] ? `${DEPTH[D.meta.depth]} depth` : null,
+  D.meta.classification
+].filter(Boolean).map(b => `<span class="badge">${esc(b)}</span>`).join('');
+
+/* ── 1 · overview ── */
+$('b-lead').textContent = D.meta.brief || '';
+$('b-facts').innerHTML = Object.entries(D.profile).map(([k,v]) =>
+  `<div><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('');
+if (D.meta.value_streams){
+  $('b-streams').hidden = false;
+  $('b-streams').innerHTML =
+    `<b>Where AI is meant to pay off:</b> ${esc(D.meta.value_streams)}`;
+}
+if ((D.meta.assumed||[]).length){
+  $('b-assumed').hidden = false;
+  $('b-assumed').innerHTML = `<b>Taken as a default, not answered:</b> ` +
+    D.meta.assumed.map(esc).join(' · ') +
+    `. Findings that rest on one of these say so.`;
+}
+$('legal').innerHTML = D.legal.frameworks.map(f => {
+  const on = /^appl/i.test(f.status);
+  return `<div class="lgl">
+    <b>${esc(f.name)}</b>
+    <span class="st" style="color:${on?'var(--teal)':'var(--gray)'}">${esc(f.status)}</span>
+    <span class="why">${esc(f.trigger)}</span>
+  </div>`;
+}).join('');
+$('divergence').innerHTML = D.legal.divergence
+  ? `<div class="diverg"><b>Note on the legal frame.</b> ${esc(D.legal.divergence)}</div>` : '';
+
+/* ── 2 · short version ── */
+$('insight').innerHTML = D.headline.insight;
+
+if ((D.alerts||[]).length){
+  $('alert-sec').hidden = false;
+  $('alerts').innerHTML = D.alerts.map(a => `
+    <div class="alert">
+      <h3>${esc(a.title)}</h3>
+      <p>${esc(a.body)}</p>
+      <div class="basis">${esc(a.basis)}</div>
+    </div>`).join('');
+}
+
+$('tiles').innerHTML = D.tiles.map(t => {
+  const segs = Number.isInteger(t.segments)
+    ? `<div class="segs" aria-hidden="true">` +
+      [1,2,3,4,5].map(i => `<i class="${i<=t.segments?'on':''}"></i>`).join('') + `</div>`
+    : '';
+  return `<div class="card tile ${t.tone==='bad'?'is-bad':t.tone==='neutral'?'is-neutral':''}">
+    <div class="lbl">${esc(t.label)}</div>
+    <div class="val num">${esc(t.value)}${t.unit?`<small> ${esc(t.unit)}</small>`:''}</div>
+    ${segs}
+    <div class="note">${esc(t.note)}</div>
+  </div>`;
+}).join('');
+
+/* ── AI-specific risks: named categories, not a ratio bar.
+   A bar over "criteria that cite OWASP" reads 0 of 3 and gets taken for
+   3 of 10 categories. Naming each one with a status says what was actually
+   checked, and the two categories this catalogue does not check are listed
+   separately rather than silently dropped.                              */
+const RSTAT = {
+  ok:      ['ok',      'Covered'],
+  partial: ['partial', 'Partly'],
+  gap:     ['gap',     'Not covered'],
+  na:      ['na',      'Not applicable']
+};
+(function risks(){
+  const all = D.risks || [];
+  if (!all.length) return;
+  const checked   = all.filter(r => r.refs);
+  const unchecked = all.filter(r => !r.refs);
+  const na = checked.filter(r => r.status === 'na').length;
+  const ok = checked.filter(r => r.status === 'ok').length;
+  const denom = checked.length - na;
+  $('risk-intro').innerHTML =
+    `Known attack patterns against AI systems (OWASP's list), and what this policy
+     does about each one. <b>${ok} of ${denom}</b> are covered. This is not a law —
+     a gap here breaks nothing legally, but the risk is real either way.`;
+  const row = r => {
+    const [cls,label] = RSTAT[r.status] || RSTAT.gap;
+    return `<div class="risk">
+      <span class="rid">${esc(r.id)}</span>
+      <span><span class="rn">${esc(r.name)}</span>
+        ${r.note ? `<span class="rnote">${esc(r.note)}</span>` : ''}
+        ${r.refs ? `<span class="rrefs">${esc(r.refs)}</span>` : ''}</span>
+      <span class="st ${cls}">${label}</span>
+    </div>`;
+  };
+  $('risks').innerHTML = checked.map(row).join('');
+  if (unchecked.length){
+    $('risks-unchecked').innerHTML =
+      `<div class="grp" style="margin-top:18px">Not checked by this catalogue
+        <small>Listed so eight of ten does not read as ten of ten.</small></div>
+       <div class="risks">${unchecked.map(row).join('')}</div>`;
+  }
+})();
+
+/* ── the matrix ──
+   A 5×5 grid, not a scatter plot: risk and strictness are whole numbers, so
+   findings collide on a handful of coordinates. Each cell carries one thing —
+   the count. Colour says matched or not, and nothing else.               */
+(function matrix(){
+  const W=620, H=450, M={t:34,r:24,b:64,l:78};
+  const cw=(W-M.l-M.r)/5, ch=(H-M.t-M.b)/5;
+  const cx=d=>M.l+(d-1)*cw, cy=r=>M.t+(5-r)*ch;
+  const cells={};
+  D.findings.forEach(f => {
+    const k = `${f.risk}|${f.strictness}`;
+    (cells[k] = cells[k] || []).push(f);
+  });
+  /* one step of tolerance — only a gap of two or more counts as a mismatch */
+  const matched = (r,d) => Math.abs(d-r) <= 1;
+  /* the backdrop tint is purely geometric — it marks the tolerance band itself,
+     independent of what actually landed there. The cell badge is different: it
+     has to reflect the real verdict of the findings inside it, so it is driven
+     by each finding's own `type`, never re-derived from r/d. A cell mixing
+     types shows the more serious one — gap over strict over ok — because that
+     is also how the findings table itself sorts them.                       */
+  const SEVERITY = {gap: 2, strict: 1, ok: 0};
+  const cellVerdict = list => list.reduce((worst, f) =>
+    (SEVERITY[f.type] ?? 0) > (SEVERITY[worst] ?? -1) ? f.type : worst, list[0]?.type);
+  let s='';
+  for(let r=1;r<=5;r++) for(let d=1;d<=5;d++){
+    const on = matched(r,d);
+    s += `<rect x="${cx(d)}" y="${cy(r)}" width="${cw}" height="${ch}"
+      fill="${on?'rgba(0,103,127,.045)':'rgba(153,15,79,.035)'}" stroke="var(--line)"/>`;
+    const list = cells[`${r}|${d}`];
+    if(!list) continue;
+    const verdict = cellVerdict(list);
+    const col = verdict === 'ok' ? 'var(--teal)' : 'var(--magenta)';
+    const hollow = verdict === 'strict';
+    s += `<g class="cell" data-k="${r}|${d}">
+      <rect x="${cx(d)+7}" y="${cy(r)+7}" width="${cw-14}" height="${ch-14}" rx="8"
+        fill="${hollow ? 'none' : col}" fill-opacity="${hollow ? '0' : '.14'}"
+        stroke="${col}" stroke-width="${hollow ? '2' : '0'}"/>
+      <text class="cnum" x="${cx(d)+cw/2}" y="${cy(r)+ch/2+7}" text-anchor="middle"
+        fill="${col}">${list.length}</text>
+    </g>`;
+  }
+  s += `<line x1="${M.l}" y1="${H-M.b}" x2="${W-M.r}" y2="${M.t}"
+    stroke="var(--mint)" stroke-width="2" stroke-dasharray="5 5" opacity=".9"/>`;
+  /* the two failure modes are named in the legend beside the chart, not as
+     floating labels inside it — a label in a corner collides with whatever
+     finding happens to land in that corner                                */
+  s += `<text class="axis" x="${(M.l+W-M.r)/2}" y="${H-30}" text-anchor="middle"
+    >How strictly the policy governs it &#8594;</text>`;
+  s += `<text class="axis role" x="${(M.l+W-M.r)/2}" y="${H-13}" text-anchor="middle"
+    >The business question</text>`;
+  s += `<text class="axis" x="${-(M.t+H-M.b)/2}" y="20" text-anchor="middle"
+    transform="rotate(-90)">How high the risk really is &#8594;</text>`;
+  s += `<text class="axis role" x="${-(M.t+H-M.b)/2}" y="35" text-anchor="middle"
+    transform="rotate(-90)">The security question</text>`;
+  for(let v=1;v<=5;v++){
+    s += `<text class="axis" x="${cx(v)+cw/2}" y="${H-M.b+19}" text-anchor="middle">${v}</text>`;
+    s += `<text class="axis" x="${M.l-13}" y="${cy(v)+ch/2+4}" text-anchor="end">${v}</text>`;
+  }
+  $('matrix').innerHTML = s;
+  $('matrix').querySelectorAll('.cell').forEach(el => {
+    const html = cells[el.dataset.k].map(f =>
+      `<b>${esc(TYPE[f.type].label)}</b><br>${esc(f.statement)}`).join('<br><br>');
+    el.addEventListener('mouseenter', e => showTip(e, html));
+    el.addEventListener('mousemove', moveTip);
+    el.addEventListener('mouseleave', hideTip);
+  });
+})();
+
+$('legend').innerHTML = Object.entries(TYPE).map(([k,t]) => `
+  <div class="row">
+    <span class="sw ${t.cls}"></span>
+    <span class="txt"><b>${esc(t.label)}</b><small>${esc(t.desc)}</small></span>
+  </div>`).join('') + `
+  <div class="how">
+    <b style="color:var(--deep-teal)">Reading the grid.</b> Squares within one step
+    of the dashed line are proportionate. Above and left of it the risk is higher
+    than the rules — <b style="color:var(--magenta)">a risk not covered</b>. Below
+    and right of it the rules are stricter than the risk —
+    <b style="color:var(--magenta)">holding the business back</b>. Hover a square for
+    the findings in it; all of them are listed in part 3.
+  </div>`;
+
+/* ── 3 · detail ── */
+const dz = D.duties;
+$('duty-intro').innerHTML = `The law requires <b>${dz.total}</b> things here, no matter
+  how good the rest of the policy is. <b>${dz.met} are covered.</b> The rest are listed
+  below, with the level each one reached \u2014 4 is the bar for \u201ccovered\u201d.`;
+$('duties').innerHTML = dz.open.length
+  ? `<div class="scale-key"><span><b>1</b> not addressed</span><span><b>2</b> mentioned, no obligation</span><span><b>3</b> not usable yet</span><span><b>4</b> usable</span><span><b>5</b> usable and checked</span></div>` +
+    `<div class="duty hd"><span>Requirement</span><span>Basis</span><span class="l">Level</span></div>` +
+    dz.open.map(d => `
+    <div class="duty">
+      <span class="t"><b>${esc(d.title)}</b> <span class="cid">${esc(d.id)}</span>
+        <small>${esc(d.risk)}</small></span>
+      <span class="n">${esc(d.norm)}</span>
+      <span class="l num">${esc(d.level)}<small style="font-weight:400;color:var(--muted)"> /5</small></span>
+    </div>`).join('')
+  : `<p style="margin:0;color:var(--teal);font-weight:700">Every legal duty in scope
+     is governed specifically enough to act on.</p>`;
+
+if ((D.latitude||[]).length){
+  $('lat-sec').hidden = false;
+  const USE = {used:'Room used', unused:'Room given away', beyond:'Beyond the law'};
+  $('latitude').innerHTML =
+    `<div class="row hd"><span>Topic</span><span>Not up for discussion</span
+      ><span>Your decision</span><span>In this policy</span></div>` +
+    D.latitude.map(l => `<div class="row">
+      <div><span class="topic">${esc(l.topic)}</span>
+        <span class="norm-ref">${esc(l.norm)}</span></div>
+      <div><p>${esc(l.must)}</p></div>
+      <div><p>${esc(l.choice)}</p>${l.evidence
+        ? `<div class="evi"><b>Policy:</b> ${esc(l.evidence)}</div>` : ''}</div>
+      <div><span class="use ${esc(l.use)}">${esc(USE[l.use] || USE.used)}</span></div>
+    </div>`).join('');
+}
+
+const KIND = {
+  law:      ['Law', 'A gap here is a legal shortfall — the checks below are binding.'],
+  standard: ['Standards — optional', 'Not a legal requirement, and not an audit of your general security setup. Only relevant if you are pursuing that certification. Every check behind these bars is still one of the AI-specific checks in this report, not a generic ISMS control.']
+};
+$('norms').innerHTML = ['law','standard'].map(k => {
+  const rows = (D.norms||[]).filter(n => n.kind === k);
+  if(!rows.length) return '';
+  return `<div class="grp">${KIND[k][0]}<small>${KIND[k][1]}</small></div>` +
+    rows.map(n => {
+      const pct = n.total ? Math.round(100*n.covered/n.total) : 0;
+      return `<div class="norm ${k==='standard'?'is-optional':''}">
+        <span>${esc(n.name)}</span>
+        <span class="track"><span class="fill" style="width:${pct}%"></span></span>
+        <span class="pc num">${n.covered}/${n.total}</span>
+      </div>`;
+    }).join('');
+}).join('');
+
+let active = 'all';
+$('filters').innerHTML =
+  [{id:'all',n:'All'}].concat(GROUPS.filter(g =>
+    D.findings.some(f => f.group === g.id)))
+    .map(g => `<button class="chip" data-f="${g.id}"
+      aria-pressed="${g.id==='all'}">${esc(g.n)}</button>`).join('') +
+  `<button class="chip" data-f="duty" aria-pressed="false">Required by law</button>
+   <button class="chip" data-f="strict" aria-pressed="false">Too strict</button>`;
+
+function rows(){
+  const list = D.findings
+    .filter(f => active==='all' ? true
+      : active==='duty'   ? isDuty(f)
+      : active==='strict' ? f.type==='strict'
+      : f.group===active)
+    /* unmet duties first, then over-strict rules, then by level ascending */
+    .slice().sort((a,b) =>
+        ((isDuty(b)&&b.level<4)?1:0) - ((isDuty(a)&&a.level<4)?1:0)
+     || ((b.type==='strict')?1:0)    - ((a.type==='strict')?1:0)
+     || a.level - b.level);
+  $('empty').style.display = list.length ? 'none' : 'block';
+  $('tbody').innerHTML = list.map(f => {
+    const t = TYPE[f.type] || TYPE.gap;
+    return `<tr>
+      <td><span class="tag ${isDuty(f)?'law':'choice'}"
+        >${isDuty(f)?'Required by law':'Your choice'}</span>
+        <div class="cid" style="margin-top:5px">${esc(f.id)}</div></td>
+      <td><span class="tag ${t.cls}">${esc(t.label)}</span></td>
+      <td class="lvl num" style="color:${f.level>=4?'var(--teal)':'var(--magenta)'}"
+        >${esc(f.level)}</td>
+      <td>
+        <div class="stmt">${esc(f.statement)}</div>
+        ${f.evidence
+          ? `<div class="evi"><b>${esc(f.evidence.ref)}:</b> &ldquo;${esc(f.evidence.quote)}&rdquo;</div>`
+          : `<div class="evi">Nothing found in the document on this — assessed as not addressed.</div>`}
+        ${f.note ? `<div class="blocked">${esc(f.note)}</div>` : ''}
+        <div class="rec">${esc(f.recommendation)}</div>
+      </td></tr>`;
+  }).join('');
+}
+$('filters').addEventListener('click', e => {
+  const b = e.target.closest('.chip'); if(!b) return;
+  active = b.dataset.f;
+  $('filters').querySelectorAll('.chip').forEach(c =>
+    c.setAttribute('aria-pressed', String(c.dataset.f === active)));
+  rows();
+});
+rows();
+
+if ((D.na||[]).length){
+  $('na-sec').hidden = false;
+  $('na').innerHTML = D.na.map(n =>
+    `<span class="na-item"><b>${esc(n.id)}</b> — ${esc(n.reason)}</span>`).join('');
+}
+
+/* ── footer ── */
+$('f-class').textContent = D.meta.classification || '';
+$('f-method').innerHTML  = `<b>Catalogue.</b> ${esc(D.meta.method)}`;
+$('f-scope').innerHTML    = `<b>Calibration.</b>
+  ${esc(SCOPE[D.meta.scope] || D.meta.scope)} — ${esc(D.meta.scope_text)}.
+  ${esc(D.meta.scope_note)}`;
+$('f-depth').innerHTML   = `<b>Depth.</b> ${esc(DEPTH[D.meta.depth]||D.meta.depth)}. ` +
+  (D.meta.depth === 'quick'
+    ? `No questions were asked at this depth, so anything marked &ldquo;to be
+       checked&rdquo; was not examined rather than examined and left open, and the
+       findings shown are the ten most serious.`
+    : `Anything marked &ldquo;to be checked&rdquo; was examined and is genuinely open.`);
+$('f-sources').innerHTML = `<b>Sources.</b> Legal texts stored with this skill were
+  last checked against their official wording on ${esc(D.meta.legal_asof)} — that date,
+  not the generation date above, is what the citations rest on.
+  ${esc(D.meta.sources)}`;
+$('d-asof').textContent = D.meta.legal_asof || '—';
+$('f-foot').innerHTML = `${esc(D.meta.client)} · ${esc(D.meta.policy)} ·
+  generated ${esc(D.meta.generated)} · classification
+  ${esc(D.meta.classification)}`;
+
+/* ── tooltip ── */
+const tip = $('tip');
+function showTip(e,html){ tip.innerHTML = html; tip.style.opacity = 1; moveTip(e); }
+function moveTip(e){
+  const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + pad, y = e.clientY + pad;
+  if (x + w > innerWidth  - 8) x = e.clientX - w - pad;
+  if (y + h > innerHeight - 8) y = e.clientY - h - pad;
+  tip.style.left = Math.max(8,x) + 'px';
+  tip.style.top  = Math.max(8,y) + 'px';
+}
+function hideTip(){ tip.style.opacity = 0; }
+</script>
+</body>
+</html>
